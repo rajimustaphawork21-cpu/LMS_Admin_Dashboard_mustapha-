@@ -47,6 +47,7 @@ watch([isFallbackStateActive, refLoadingIndicator], () => {
         <Component :is="Component" />
       </Suspense>
     </RouterView>
+
   </Component>
 </template>
 

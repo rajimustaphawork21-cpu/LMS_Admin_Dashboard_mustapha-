@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+import type { VForm } from 'vuetify/components/VForm'
 import home from '@images/svg/home.svg'
 import office from '@images/svg/office.svg'
 
@@ -42,14 +44,23 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emit>()
 
+const refForm = ref<VForm>()
+const submitted = ref(false)
+
 const billingAddress = ref<BillingAddress>(structuredClone(toRaw(props.billingAddress)))
 
 const resetForm = () => {
   emit('update:isDialogVisible', false)
   billingAddress.value = structuredClone(toRaw(props.billingAddress))
+  submitted.value = false
+  refForm.value?.resetValidation()
 }
 
-const onFormSubmit = () => {
+const onFormSubmit = async () => {
+  submitted.value = true
+  const result = await refForm.value?.validate()
+  if (!result?.valid) return
+
   emit('update:isDialogVisible', false)
   emit('submit', billingAddress.value)
 }
@@ -70,13 +81,26 @@ const addressTypes = [
     value: 'Office',
   },
 ]
+
+watch(props, () => {
+  if (!props.isDialogVisible) {
+    submitted.value = false
+    refForm.value?.resetValidation()
+  }
+})
 </script>
 
 <template>
   <VDialog
     :width="$vuetify.display.smAndDown ? 'auto' : 900 "
     :model-value="props.isDialogVisible"
-    @update:model-value="val => $emit('update:isDialogVisible', val)"
+    @update:model-value="val => {
+      $emit('update:isDialogVisible', val)
+      if (!val) {
+        submitted = false
+        refForm?.resetValidation()
+      }
+    }"
   >
     <!-- 👉 Dialog close btn -->
     <DialogCloseBtn @click="$emit('update:isDialogVisible', false)" />
@@ -103,7 +127,10 @@ const addressTypes = [
         </div>
 
         <!-- 👉 Form -->
-        <VForm @submit.prevent="onFormSubmit">
+        <VForm
+          ref="refForm"
+          @submit.prevent="onFormSubmit"
+        >
           <VRow>
             <!-- 👉 First Name -->
             <VCol
@@ -114,6 +141,8 @@ const addressTypes = [
                 v-model="billingAddress.firstName"
                 label="First Name"
                 placeholder="John"
+                :error="submitted && !billingAddress.firstName"
+                hide-details
               />
             </VCol>
 
@@ -126,6 +155,8 @@ const addressTypes = [
                 v-model="billingAddress.lastName"
                 label="Last Name"
                 placeholder="Doe"
+                :error="submitted && !billingAddress.lastName"
+                hide-details
               />
             </VCol>
 
@@ -136,6 +167,8 @@ const addressTypes = [
                 label="Select Country"
                 placeholder="Select Country"
                 :items="['USA', 'Aus', 'Canada', 'NZ']"
+                :error="submitted && !billingAddress.selectedCountry"
+                hide-details
               />
             </VCol>
 
@@ -145,6 +178,8 @@ const addressTypes = [
                 v-model="billingAddress.addressLine1"
                 label="Address Line 1"
                 placeholder="12, Business Park"
+                :error="submitted && !billingAddress.addressLine1"
+                hide-details
               />
             </VCol>
 
@@ -154,6 +189,8 @@ const addressTypes = [
                 v-model="billingAddress.addressLine2"
                 label="Address Line 2"
                 placeholder="Mall Road"
+                :error="submitted && !billingAddress.addressLine2"
+                hide-details
               />
             </VCol>
 
@@ -166,6 +203,8 @@ const addressTypes = [
                 v-model="billingAddress.landmark"
                 label="Landmark"
                 placeholder="Nr. Hard Rock Cafe"
+                :error="submitted && !billingAddress.landmark"
+                hide-details
               />
             </VCol>
 
@@ -178,6 +217,8 @@ const addressTypes = [
                 v-model="billingAddress.city"
                 label="City"
                 placeholder="Los Angeles"
+                :error="submitted && !billingAddress.city"
+                hide-details
               />
             </VCol>
 
@@ -190,6 +231,8 @@ const addressTypes = [
                 v-model="billingAddress.state"
                 label="State"
                 placeholder="California"
+                :error="submitted && !billingAddress.state"
+                hide-details
               />
             </VCol>
 
@@ -203,6 +246,8 @@ const addressTypes = [
                 label="Zip Code"
                 placeholder="99950"
                 type="number"
+                :error="submitted && !billingAddress.zipCode"
+                hide-details
               />
             </VCol>
 

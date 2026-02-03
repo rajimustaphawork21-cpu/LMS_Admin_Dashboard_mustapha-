@@ -26,6 +26,11 @@ export default [
     component: () => import('@/pages/admin/Certificates.vue'),
   },
   {
+    path: '/admin/certificates/:id',
+    name: 'admin-certificate-view',
+    component: () => import('@/pages/admin/certificate-view.vue'),
+},
+  {
     path: '/admin/settings',
     name: 'admin-settings',
     component: () => import('@/pages/admin/Settings.vue'),

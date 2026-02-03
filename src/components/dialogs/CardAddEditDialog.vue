@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+import type { VForm } from 'vuetify/components/VForm'
+
 interface Details {
   number: string | number
   name: string
@@ -30,17 +33,26 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emit>()
 
+const refForm = ref<VForm>()
+const submitted = ref(false)
+
 const cardDetails = ref<Details>(structuredClone(toRaw(props.cardDetails)))
 
 watch(() => props, () => {
   cardDetails.value = structuredClone(toRaw(props.cardDetails))
 })
 
-const formSubmit = () => {
+const formSubmit = async () => {
+  submitted.value = true
+  const result = await refForm.value?.validate()
+  if (!result?.valid) return
+
   emit('submit', cardDetails.value)
 }
 
 const dialogModelValueUpdate = (val: boolean) => {
+  submitted.value = false
+  refForm.value?.resetValidation()
   emit('update:isDialogVisible', val)
 }
 </script>
@@ -68,7 +80,10 @@ const dialogModelValueUpdate = (val: boolean) => {
       </VCardItem>
 
       <VCardText class="pt-6">
-        <VForm @submit.prevent="() => {}">
+        <VForm
+          ref="refForm"
+          @submit.prevent="formSubmit"
+        >
           <VRow>
             <!-- 👉 Card Number -->
             <VCol cols="12">
@@ -77,6 +92,8 @@ const dialogModelValueUpdate = (val: boolean) => {
                 label="Card Number"
                 placeholder="1356 3215 6548 7898"
                 type="number"
+                :error="submitted && !cardDetails.number"
+                hide-details
               />
             </VCol>
 
@@ -89,6 +106,8 @@ const dialogModelValueUpdate = (val: boolean) => {
                 v-model="cardDetails.name"
                 label="Name"
                 placeholder="John Doe"
+                :error="submitted && !cardDetails.name"
+                hide-details
               />
             </VCol>
 
@@ -101,6 +120,8 @@ const dialogModelValueUpdate = (val: boolean) => {
                 v-model="cardDetails.expiry"
                 label="Expiry Date"
                 placeholder="MM/YY"
+                :error="submitted && !cardDetails.expiry"
+                hide-details
               />
             </VCol>
 
@@ -114,6 +135,8 @@ const dialogModelValueUpdate = (val: boolean) => {
                 type="number"
                 label="CVV Code"
                 placeholder="654"
+                :error="submitted && !cardDetails.cvv"
+                hide-details
               />
             </VCol>
 
@@ -133,14 +156,13 @@ const dialogModelValueUpdate = (val: boolean) => {
               <VBtn
                 class="me-4"
                 type="submit"
-                @click="formSubmit"
               >
                 Submit
               </VBtn>
               <VBtn
                 color="secondary"
                 variant="tonal"
-                @click="$emit('update:isDialogVisible', false)"
+                @click="dialogModelValueUpdate(false)"
               >
                 Cancel
               </VBtn>

@@ -1,15 +1,17 @@
-<!-- src/pages/admin/Courses.vue -->
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+
 import { useCoursesStore } from '@/stores/courses.store'
 import type { Course, CreateCourseDto, UpdateCourseDto } from '@/types/course'
+
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 import EmptyState from '@/components/shared/EmptyState.vue'
 import LoadingSkeleton from '@/components/shared/LoadingSkeleton.vue'
+import CourseDialog from '@/components/courses/CourseDialog.vue'
 
 const store = useCoursesStore()
 
-// UI
+// ===== UI =====
 const snackbar = ref(false)
 const snackbarText = ref('')
 
@@ -21,6 +23,7 @@ const deleteDialog = ref(false)
 const deleting = ref(false)
 const courseToDelete = ref<Course | null>(null)
 
+// ===== Form state (shared with CourseDialog via props) =====
 const form = ref<CreateCourseDto>({
   title: '',
   description: null,
@@ -60,6 +63,7 @@ function openCreate() {
 function openEdit(item: Course) {
   dialogMode.value = 'edit'
   editedId.value = item.id
+
   form.value = {
     title: item.title ?? '',
     description: item.description ?? null,
@@ -69,17 +73,14 @@ function openEdit(item: Course) {
     price: item.price ?? null,
     thumbnail: item.thumbnail ?? null,
   }
+
   dialogOpen.value = true
 }
 
+// ✅ Called when CourseDialog emits "save" (after red validation passed)
 async function submit() {
   saving.value = true
   try {
-    if (!form.value.title?.trim()) {
-      toast('Title is required')
-      return
-    }
-
     if (dialogMode.value === 'create') {
       await store.create(form.value)
       toast('Course created successfully')
@@ -90,9 +91,8 @@ async function submit() {
     }
 
     dialogOpen.value = false
-    // Refresh list to keep pagination correct
     await store.fetchList()
-  } catch (e: any) {
+  } catch (e) {
     toast('API error: failed to save course')
   } finally {
     saving.value = false
@@ -106,6 +106,7 @@ function askDelete(item: Course) {
 
 async function confirmDelete() {
   if (!courseToDelete.value) return
+
   deleting.value = true
   try {
     await store.remove(courseToDelete.value.id)
@@ -120,7 +121,7 @@ async function confirmDelete() {
   }
 }
 
-// Table helpers
+// ===== Table helpers =====
 function formatDate(value?: string) {
   if (!value) return '—'
   const d = new Date(value)
@@ -137,7 +138,7 @@ const headers = computed(() => ([
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
 ]))
 
-// Load
+// ===== Load =====
 async function load() {
   try {
     await store.fetchList()
@@ -148,13 +149,13 @@ async function load() {
 
 onMounted(load)
 
-// React to search/pagination
+// React to pagination
 watch(
   () => [store.page, store.limit],
   () => load(),
 )
 
-// Debounced-ish search
+// Debounced search
 let searchTimer: any = null
 watch(
   () => store.search,
@@ -233,8 +234,6 @@ watch(
         />
 
         <div v-else class="table-wrap">
-          <!-- Vuexy/Vuetify projects sometimes use VDataTable from labs.
-               To keep it compatible, we use VTable + simple pagination UI. -->
           <VTable>
             <thead>
               <tr>
@@ -310,60 +309,14 @@ watch(
     </VCard>
 
     <!-- Create/Edit Dialog -->
-    <VDialog v-model="dialogOpen" width="720">
-      <VCard>
-        <VCardTitle class="text-h6">
-          {{ dialogMode === 'create' ? 'Create Course' : 'Edit Course' }}
-        </VCardTitle>
-        <VCardText>
-          <VRow>
-            <VCol cols="12" md="6">
-              <VTextField v-model="form.title" label="Title" />
-            </VCol>
-            <VCol cols="12" md="6">
-              <VTextField v-model="form.category" label="Category" />
-            </VCol>
-
-            <VCol cols="12" md="6">
-              <VSelect
-                v-model="form.level"
-                :items="['Beginner', 'Intermediate', 'Advanced']"
-                label="Level"
-              />
-            </VCol>
-
-            <VCol cols="12" md="6">
-              <VSelect
-                v-model="form.status"
-                :items="['draft', 'published']"
-                label="Status"
-              />
-            </VCol>
-
-            <VCol cols="12" md="6">
-              <VTextField v-model="form.price" label="Price" type="number" />
-            </VCol>
-
-            <VCol cols="12" md="6">
-              <VTextField v-model="form.thumbnail" label="Thumbnail URL" />
-            </VCol>
-
-            <VCol cols="12">
-              <VTextarea v-model="form.description" label="Description" rows="3" />
-            </VCol>
-          </VRow>
-        </VCardText>
-
-        <VCardActions class="justify-end">
-          <VBtn variant="text" :disabled="saving" @click="dialogOpen = false">
-            Cancel
-          </VBtn>
-          <VBtn color="primary" :loading="saving" @click="submit">
-            Save
-          </VBtn>
-        </VCardActions>
-      </VCard>
-    </VDialog>
+   <CourseDialog
+      v-model="dialogOpen"
+      :mode="dialogMode"
+      :saving="saving"
+      :form="form"
+      @save="submit"
+      @cancel="dialogOpen = false"
+    />
 
     <!-- Delete confirm -->
     <ConfirmDialog

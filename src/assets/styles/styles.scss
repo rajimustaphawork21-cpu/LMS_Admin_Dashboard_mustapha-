@@ -1,1 +1,42 @@
 // Write your overrides
+/* =========================================================
+   Global app overrides for Vuexy / Vuetify
+   Fix: Vertical sidebar active link highlight (purple)
+   ========================================================= */
+
+/* 1) Active link background + text */
+.layout-nav-type-vertical
+  .layout-vertical-nav
+  .nav-link
+  > a.router-link-active,
+.layout-nav-type-vertical
+  .layout-vertical-nav
+  .nav-link
+  > a.router-link-exact-active {
+  background: rgba(var(--v-theme-primary), 0.12);
+  color: rgb(var(--v-theme-primary)) !important;
+  border-inline-start: 3px solid rgb(var(--v-theme-primary));
+  border-radius: 10px;
+}
+
+/* 2) Active icon color */
+.layout-nav-type-vertical
+  .layout-vertical-nav
+  .nav-link
+  > a.router-link-active
+  .v-icon,
+.layout-nav-type-vertical
+  .layout-vertical-nav
+  .nav-link
+  > a.router-link-exact-active
+  .v-icon {
+  color: rgb(var(--v-theme-primary)) !important;
+}
+
+/* 3) (Optional) Better hover when NOT active */
+.layout-nav-type-vertical
+  .layout-vertical-nav
+  .nav-link
+  > a:not(.router-link-active):not(.router-link-exact-active):hover {
+  background: rgba(var(--v-theme-on-surface), 0.06);
+}

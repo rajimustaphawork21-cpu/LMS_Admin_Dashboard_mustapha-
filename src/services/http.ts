@@ -1,23 +1,18 @@
 import axios, { AxiosError } from 'axios'
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 20000,
-  headers: {
-    Accept: 'application/json',
-  },
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+  timeout: 15000,
+  headers: { Accept: 'application/json' },
 })
 
-
-
+// Request interceptor (اختياري)
 api.interceptors.request.use(config => {
-  config.headers = config.headers ?? {}
-  config.headers['ngrok-skip-browser-warning'] = 'true'
-  if (config.method && ['post', 'put', 'patch'].includes(config.method))
-    config.headers['Content-Type'] = 'application/json'
+  config.headers['X-App'] = 'LMS-Admin'
   return config
 })
 
+// Response interceptor (باش توحّد errors)
 api.interceptors.response.use(
   res => res,
   (err: AxiosError<any>) => {
@@ -27,9 +22,6 @@ api.interceptors.response.use(
       (data && (data.message || data.error)) ||
       err.message ||
       'Request failed'
-
-    console.error('API Error:', status, message)
-
     return Promise.reject({ status, message, data })
   },
 )

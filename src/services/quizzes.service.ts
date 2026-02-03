@@ -14,7 +14,7 @@ function normalize<T>(payload: any): ApiListResponse<T> {
 }
 
 export const QuizzesService = {
-  async list(params?: { page?: number; limit?: number; courseId?: string }) {
+  async list(params?: { page?: number; limit?: number; courseId?: string }): Promise<ApiListResponse<Quiz>> {
     const res = await api.get('/quizzes', { params })
     return normalize<Quiz>(res.data)
   },
